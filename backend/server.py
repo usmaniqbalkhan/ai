@@ -324,12 +324,16 @@ async def analyze_channel(request: ChannelAnalysisRequest):
             video_ids = [video['id']['videoId'] for video in videos_data]
             video_details = await get_video_details(session, video_ids)
             
+            # Get video categories mapping
+            video_categories = await get_video_categories(session)
+            
             # Process timezone
             user_timezone = pytz.timezone(request.timezone) if request.timezone != "UTC" else pytz.UTC
             
             # Process videos
             processed_videos = []
             previous_date = None
+            category_count = {}
             
             # Sort videos by date
             video_details.sort(
@@ -342,12 +346,28 @@ async def analyze_channel(request: ChannelAnalysisRequest):
             recent_views_30_days = 0
             
             for video in video_details:
-                # Parse upload date
-                upload_date = datetime.fromisoformat(video['snippet']['publishedAt'].replace('Z', '+00:00'))
+                # Parse upload date with proper timezone handling
+                upload_date_str = video['snippet']['publishedAt']
+                # Handle both Z and +00:00 formats
+                if upload_date_str.endswith('Z'):
+                    upload_date_str = upload_date_str.replace('Z', '+00:00')
                 
-                # Convert to user timezone
+                upload_date = datetime.fromisoformat(upload_date_str)
+                
+                # Convert to user timezone for display
                 upload_date_local = upload_date.astimezone(user_timezone)
+                upload_date_utc_str = upload_date.strftime("%b %d, %Y, %I:%M %p UTC")
                 upload_date_local_str = upload_date_local.strftime("%b %d, %Y, %I:%M %p")
+                
+                # Get category information
+                category_id = video['snippet'].get('categoryId', '24')  # Default to Entertainment
+                category = video_categories.get(category_id, 'Entertainment')
+                
+                # Count categories for channel summary
+                if category in category_count:
+                    category_count[category] += 1
+                else:
+                    category_count[category] = 1
                 
                 # Get statistics
                 stats = video.get('statistics', {})
@@ -370,6 +390,7 @@ async def analyze_channel(request: ChannelAnalysisRequest):
                     title=video['snippet']['title'],
                     upload_date=upload_date,
                     upload_date_local=upload_date_local_str,
+                    upload_date_utc=upload_date_utc_str,
                     duration=parse_duration(video['contentDetails']['duration']),
                     views=views,
                     likes=likes,
@@ -377,7 +398,9 @@ async def analyze_channel(request: ChannelAnalysisRequest):
                     engagement_rate=round(engagement_rate, 2),
                     time_gap_hours=round(time_gap_hours, 1),
                     time_gap_text=time_gap_text,
-                    thumbnail_url=f"https://img.youtube.com/vi/{video['id']}/hqdefault.jpg"
+                    thumbnail_url=f"https://img.youtube.com/vi/{video['id']}/hqdefault.jpg",
+                    category=category,
+                    category_id=category_id
                 )
                 
                 processed_videos.append(processed_video)
@@ -389,15 +412,19 @@ async def analyze_channel(request: ChannelAnalysisRequest):
             channel_stats = channel_data.get('statistics', {})
             channel_snippet = channel_data['snippet']
             
-            # Get primary category
-            topic_details = channel_data.get('topicDetails', {})
+            # Get primary category from most common video category
             primary_category = "General"
-            if topic_details and 'topicCategories' in topic_details:
-                categories = topic_details['topicCategories']
-                if categories:
-                    # Extract category name from URL
-                    category_url = categories[0]
-                    primary_category = category_url.split('/')[-1].replace('_', ' ').title()
+            if category_count:
+                primary_category = max(category_count, key=category_count.get)
+            else:
+                # Fallback to topicDetails if available
+                topic_details = channel_data.get('topicDetails', {})
+                if topic_details and 'topicCategories' in topic_details:
+                    categories = topic_details['topicCategories']
+                    if categories:
+                        # Extract category name from URL
+                        category_url = categories[0]
+                        primary_category = category_url.split('/')[-1].replace('_', ' ').title()
             
             # Detect monetization
             monetization_status = detect_monetization(channel_data, video_details)
