@@ -338,8 +338,18 @@ const YouTubeChannelAnalyzer = () => {
                   <thead>
                     <tr className="bg-gray-50">
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Video</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Category</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Upload Date</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                        <span className="flex items-center gap-1">
+                          Category 
+                          <span className="text-xs bg-purple-100 text-purple-800 px-1 rounded">New</span>
+                        </span>
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                        <span className="flex items-center gap-1">
+                          Upload Date 
+                          <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">UTC Hover</span>
+                        </span>
+                      </th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Duration</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Views</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Likes</th>
