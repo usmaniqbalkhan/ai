@@ -649,6 +649,15 @@ class YouTubeChannelAnalyzerTester:
         print("\n🌍 Testing Timezone Handling...")
         self.test_timezone_handling()
         
+        print("\n🌍 Testing ENHANCED Timezone Accuracy...")
+        self.test_enhanced_timezone_accuracy()
+        
+        print("\n🏷️ Testing ENHANCED Category Mapping...")
+        self.test_enhanced_category_mapping()
+        
+        print("\n📋 Testing ENHANCED Data Structure...")
+        self.test_enhanced_data_structure()
+        
         print("\n🔗 Testing URL Format Support...")
         self.test_different_url_formats()
         
