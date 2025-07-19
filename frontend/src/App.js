@@ -179,7 +179,10 @@ const YouTubeChannelAnalyzer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Timezone (for accurate timestamps)
+                <span className="flex items-center gap-2">
+                  🕐 Timezone (for accurate timestamps)
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Enhanced</span>
+                </span>
               </label>
               <select
                 value={timezone}
