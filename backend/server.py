@@ -46,6 +46,7 @@ class VideoInfo(BaseModel):
     title: str
     upload_date: datetime
     upload_date_local: str
+    upload_date_utc: str
     duration: str
     views: int
     likes: Optional[int] = 0
@@ -54,6 +55,8 @@ class VideoInfo(BaseModel):
     time_gap_hours: Optional[float] = 0.0
     time_gap_text: Optional[str] = ""
     thumbnail_url: str
+    category: str
+    category_id: str
 
 class ChannelInfo(BaseModel):
     id: str
