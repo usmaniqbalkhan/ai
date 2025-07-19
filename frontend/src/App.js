@@ -327,8 +327,10 @@ const YouTubeChannelAnalyzer = () => {
 
             {/* Video Analysis Table */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                🎥 Video Analysis ({analysis.videos.length} videos) - Timezone: {timezone}
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                🎥 Video Analysis ({analysis.videos.length} videos) 
+                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">Timezone: {timezone}</span>
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Enhanced</span>
               </h2>
               
               <div className="overflow-x-auto">
