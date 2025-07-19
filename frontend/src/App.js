@@ -385,10 +385,13 @@ const YouTubeChannelAnalyzer = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          <div title={`UTC: ${video.upload_date_utc}`}>
+                          <div 
+                            className="cursor-help" 
+                            title={`UTC: ${video.upload_date_utc || video.upload_date}`}
+                          >
                             <div className="font-medium">{video.upload_date_local}</div>
-                            <div className="text-xs text-gray-500">
-                              Hover for UTC
+                            <div className="text-xs text-blue-600">
+                              Hover for UTC ↗️
                             </div>
                           </div>
                         </td>
