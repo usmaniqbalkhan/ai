@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { utcToZonedTime, format } from 'date-fns-tz';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -30,11 +29,19 @@ const YouTubeChannelAnalyzer = () => {
     'America/Sao_Paulo'
   ];
 
-  const formatLocalTime = (utcTimestamp, userTimezone) => {
+  // Helper function for timezone-aware formatting using built-in JS
+  const formatTimeWithTimezone = (utcTimestamp, userTimezone) => {
     try {
       const utcDate = new Date(utcTimestamp);
-      const zonedDate = utcToZonedTime(utcDate, userTimezone);
-      return format(zonedDate, 'MMM dd, yyyy, hh:mm aaaa', { timeZone: userTimezone });
+      return utcDate.toLocaleString('en-US', {
+        timeZone: userTimezone,
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     } catch (e) {
       return utcTimestamp; // Fallback to original if formatting fails
     }
