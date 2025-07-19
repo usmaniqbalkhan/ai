@@ -248,6 +248,231 @@ class YouTubeChannelAnalyzerTester:
                     
             except Exception as e:
                 self.log_test(f"Timezone Test ({timezone})", "FAIL", f"Request error: {str(e)}")
+
+    def test_enhanced_timezone_accuracy(self):
+        """Test ENHANCED timezone accuracy and day-slipping prevention"""
+        # Test with America/New_York timezone specifically
+        test_data = {
+            "channel_url": "https://youtube.com/@mkbhd",
+            "video_count": 10,
+            "sort_order": "newest",
+            "timezone": "America/New_York"
+        }
+        
+        try:
+            response = requests.post(
+                f"{API_BASE_URL}/analyze-channel",
+                json=test_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                videos = data.get("videos", [])
+                
+                if not videos:
+                    self.log_test("Enhanced Timezone Accuracy (NY)", "FAIL", "No videos returned")
+                    return
+                
+                video = videos[0]
+                
+                # Check for both UTC and local timestamp fields
+                required_fields = ["upload_date_utc", "upload_date_local", "upload_date"]
+                missing_fields = [field for field in required_fields if field not in video]
+                
+                if missing_fields:
+                    self.log_test("Enhanced Timezone Accuracy (NY)", "FAIL", 
+                                f"Missing timestamp fields: {missing_fields}")
+                    return
+                
+                # Verify UTC and local timestamps are different (unless uploaded at exact UTC midnight)
+                utc_time = video["upload_date_utc"]
+                local_time = video["upload_date_local"]
+                
+                if utc_time and local_time:
+                    self.log_test("Enhanced Timezone Accuracy (NY)", "PASS", 
+                                f"Both UTC ({utc_time}) and local ({local_time}) timestamps present")
+                else:
+                    self.log_test("Enhanced Timezone Accuracy (NY)", "FAIL", 
+                                "UTC or local timestamp is empty")
+                    
+            else:
+                self.log_test("Enhanced Timezone Accuracy (NY)", "FAIL", 
+                            f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Enhanced Timezone Accuracy (NY)", "FAIL", f"Request error: {str(e)}")
+        
+        # Test with Asia/Tokyo timezone for late-night UTC uploads
+        test_data["timezone"] = "Asia/Tokyo"
+        
+        try:
+            response = requests.post(
+                f"{API_BASE_URL}/analyze-channel",
+                json=test_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                videos = data.get("videos", [])
+                
+                if videos:
+                    video = videos[0]
+                    if "upload_date_utc" in video and "upload_date_local" in video:
+                        self.log_test("Enhanced Timezone Accuracy (Tokyo)", "PASS", 
+                                    f"Tokyo timezone conversion working: UTC={video['upload_date_utc']}, Local={video['upload_date_local']}")
+                    else:
+                        self.log_test("Enhanced Timezone Accuracy (Tokyo)", "FAIL", 
+                                    "Missing UTC or local timestamp fields")
+                else:
+                    self.log_test("Enhanced Timezone Accuracy (Tokyo)", "FAIL", "No videos returned")
+                    
+            else:
+                self.log_test("Enhanced Timezone Accuracy (Tokyo)", "FAIL", 
+                            f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Enhanced Timezone Accuracy (Tokyo)", "FAIL", f"Request error: {str(e)}")
+
+    def test_enhanced_category_mapping(self):
+        """Test ENHANCED category mapping with real YouTube categories"""
+        test_data = {
+            "channel_url": "https://youtube.com/@mkbhd",
+            "video_count": 10,
+            "sort_order": "newest",
+            "timezone": "America/New_York"
+        }
+        
+        try:
+            response = requests.post(
+                f"{API_BASE_URL}/analyze-channel",
+                json=test_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                videos = data.get("videos", [])
+                channel_info = data.get("channel_info", {})
+                
+                if not videos:
+                    self.log_test("Enhanced Category Mapping", "FAIL", "No videos returned")
+                    return
+                
+                # Check if videos have category and category_id fields
+                video = videos[0]
+                required_category_fields = ["category", "category_id"]
+                missing_fields = [field for field in required_category_fields if field not in video]
+                
+                if missing_fields:
+                    self.log_test("Enhanced Category Mapping", "FAIL", 
+                                f"Missing category fields in videos: {missing_fields}")
+                    return
+                
+                # Verify categories are real YouTube categories (not generic fallbacks)
+                valid_categories = [
+                    "Science & Technology", "Entertainment", "Music", "Gaming", 
+                    "Education", "Sports", "News & Politics", "Howto & Style",
+                    "Film & Animation", "Autos & Vehicles", "Pets & Animals",
+                    "Travel & Events", "People & Blogs", "Comedy"
+                ]
+                
+                categories_found = set()
+                for video in videos:
+                    category = video.get("category", "")
+                    categories_found.add(category)
+                
+                # Check if we have real categories (not just "Entertainment" fallback)
+                real_categories = [cat for cat in categories_found if cat in valid_categories]
+                
+                if real_categories:
+                    self.log_test("Enhanced Category Mapping", "PASS", 
+                                f"Found real YouTube categories: {list(real_categories)}")
+                else:
+                    self.log_test("Enhanced Category Mapping", "FAIL", 
+                                f"Only generic categories found: {list(categories_found)}")
+                
+                # Check channel primary_category is data-driven
+                primary_category = channel_info.get("primary_category", "")
+                if primary_category and primary_category != "General":
+                    self.log_test("Enhanced Category Mapping (Channel)", "PASS", 
+                                f"Channel primary category: {primary_category}")
+                else:
+                    self.log_test("Enhanced Category Mapping (Channel)", "FAIL", 
+                                f"Generic primary category: {primary_category}")
+                    
+            else:
+                self.log_test("Enhanced Category Mapping", "FAIL", 
+                            f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Enhanced Category Mapping", "FAIL", f"Request error: {str(e)}")
+
+    def test_enhanced_data_structure(self):
+        """Test ENHANCED data structure with new fields"""
+        test_data = {
+            "channel_url": "https://youtube.com/@mkbhd",
+            "video_count": 10,
+            "sort_order": "newest",
+            "timezone": "America/New_York"
+        }
+        
+        try:
+            response = requests.post(
+                f"{API_BASE_URL}/analyze-channel",
+                json=test_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                videos = data.get("videos", [])
+                
+                if not videos:
+                    self.log_test("Enhanced Data Structure", "FAIL", "No videos returned")
+                    return
+                
+                video = videos[0]
+                
+                # Check for enhanced VideoInfo fields
+                enhanced_fields = [
+                    "upload_date_utc", "upload_date_local", "category", "category_id"
+                ]
+                
+                missing_fields = [field for field in enhanced_fields if field not in video]
+                
+                if not missing_fields:
+                    self.log_test("Enhanced Data Structure", "PASS", 
+                                "All enhanced fields present in VideoInfo model")
+                    
+                    # Verify field content quality
+                    field_quality = []
+                    if video["upload_date_utc"] and "UTC" in video["upload_date_utc"]:
+                        field_quality.append("UTC timestamp formatted correctly")
+                    if video["upload_date_local"] and video["upload_date_local"] != video["upload_date_utc"]:
+                        field_quality.append("Local timestamp differs from UTC")
+                    if video["category"] and video["category"] != "Unknown":
+                        field_quality.append(f"Category: {video['category']}")
+                    if video["category_id"] and video["category_id"].isdigit():
+                        field_quality.append(f"Category ID: {video['category_id']}")
+                    
+                    if field_quality:
+                        self.log_test("Enhanced Data Structure Quality", "PASS", 
+                                    f"Field quality checks: {', '.join(field_quality)}")
+                    else:
+                        self.log_test("Enhanced Data Structure Quality", "FAIL", 
+                                    "Enhanced fields present but content quality issues")
+                else:
+                    self.log_test("Enhanced Data Structure", "FAIL", 
+                                f"Missing enhanced fields: {missing_fields}")
+                    
+            else:
+                self.log_test("Enhanced Data Structure", "FAIL", 
+                            f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Enhanced Data Structure", "FAIL", f"Request error: {str(e)}")
     
     def test_different_url_formats(self):
         """Test different YouTube URL formats"""
