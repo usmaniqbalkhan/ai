@@ -262,9 +262,12 @@ const YouTubeChannelAnalyzer = () => {
                 
                 <div className="text-center">
                   <h4 className="font-semibold text-gray-700">Primary Category</h4>
-                  <p className="text-gray-600 font-medium bg-blue-50 px-3 py-1 rounded-full inline-block">
-                    {analysis.channel_info.primary_category}
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-gray-600 font-medium bg-gradient-to-r from-purple-100 to-blue-100 px-3 py-1 rounded-full inline-block">
+                      🏷️ {analysis.channel_info.primary_category}
+                    </p>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Enhanced</span>
+                  </div>
                 </div>
                 
                 <div className="text-center">
