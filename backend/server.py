@@ -258,6 +258,43 @@ async def get_video_details(session: aiohttp.ClientSession, video_ids: List[str]
     
     return video_details
 
+async def get_video_categories(session: aiohttp.ClientSession, region_code: str = "US") -> Dict[str, str]:
+    """Get YouTube video categories mapping"""
+    url = f"{YOUTUBE_API_BASE_URL}/videoCategories"
+    params = {
+        'part': 'snippet',
+        'regionCode': region_code,
+        'key': YOUTUBE_API_KEY
+    }
+    
+    async with session.get(url, params=params) as response:
+        if response.status == 200:
+            data = await response.json()
+            categories = {}
+            for item in data.get('items', []):
+                category_id = item['id']
+                category_title = item['snippet']['title']
+                categories[category_id] = category_title
+            return categories
+        else:
+            # Fallback categories for common IDs
+            return {
+                '1': 'Film & Animation',
+                '2': 'Autos & Vehicles', 
+                '10': 'Music',
+                '15': 'Pets & Animals',
+                '17': 'Sports',
+                '19': 'Travel & Events',
+                '20': 'Gaming',
+                '22': 'People & Blogs',
+                '23': 'Comedy',
+                '24': 'Entertainment',
+                '25': 'News & Politics',
+                '26': 'Howto & Style',
+                '27': 'Education',
+                '28': 'Science & Technology'
+            }
+
 @api_router.post("/analyze-channel")
 async def analyze_channel(request: ChannelAnalysisRequest):
     """Analyze a YouTube channel and return comprehensive data"""
