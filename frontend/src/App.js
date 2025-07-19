@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { utcToZonedTime, format } from 'date-fns-tz';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -18,13 +19,26 @@ const YouTubeChannelAnalyzer = () => {
     'UTC',
     'America/New_York',
     'America/Los_Angeles',
+    'America/Chicago',
     'Europe/London',
     'Europe/Paris',
+    'Europe/Berlin',
     'Asia/Tokyo',
     'Asia/Shanghai',
     'Asia/Kolkata',
-    'Australia/Sydney'
+    'Australia/Sydney',
+    'America/Sao_Paulo'
   ];
+
+  const formatLocalTime = (utcTimestamp, userTimezone) => {
+    try {
+      const utcDate = new Date(utcTimestamp);
+      const zonedDate = utcToZonedTime(utcDate, userTimezone);
+      return format(zonedDate, 'MMM dd, yyyy, hh:mm aaaa', { timeZone: userTimezone });
+    } catch (e) {
+      return utcTimestamp; // Fallback to original if formatting fails
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!channelUrl.trim()) {
@@ -55,14 +69,15 @@ const YouTubeChannelAnalyzer = () => {
   const exportToCSV = () => {
     if (!analysis) return;
 
-    const headers = ['Title', 'Video ID', 'Upload Date (UTC)', 'Upload Date (Local)', 'Duration', 'Views', 'Likes', 'Comments', 'Engagement Rate %', 'Time Gap'];
+    const headers = ['Title', 'Video ID', 'Category', 'Upload Date (UTC)', 'Upload Date (Local)', 'Duration', 'Views', 'Likes', 'Comments', 'Engagement Rate %', 'Time Gap'];
     
     const csvContent = [
       headers.join(','),
       ...analysis.videos.map(video => [
         `"${video.title.replace(/"/g, '""')}"`,
         video.id,
-        video.upload_date,
+        `"${video.category}"`,
+        `"${video.upload_date_utc}"`,
         `"${video.upload_date_local}"`,
         video.duration,
         video.views,
@@ -103,7 +118,7 @@ const YouTubeChannelAnalyzer = () => {
             🎬 YouTube Channel Analyzer
           </h1>
           <p className="text-gray-600 text-lg">
-            Professional-grade analytics for any YouTube channel
+            Professional-grade analytics with accurate timestamps and categories
           </p>
         </div>
 
@@ -118,7 +133,7 @@ const YouTubeChannelAnalyzer = () => {
                 type="text"
                 value={channelUrl}
                 onChange={(e) => setChannelUrl(e.target.value)}
-                placeholder="https://youtube.com/channel/..."
+                placeholder="https://youtube.com/@channel or channel/user URL"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -157,7 +172,7 @@ const YouTubeChannelAnalyzer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Timezone
+                Timezone (for accurate timestamps)
               </label>
               <select
                 value={timezone}
@@ -236,8 +251,10 @@ const YouTubeChannelAnalyzer = () => {
                 </div>
                 
                 <div className="text-center">
-                  <h4 className="font-semibold text-gray-700">Category</h4>
-                  <p className="text-gray-600">{analysis.channel_info.primary_category}</p>
+                  <h4 className="font-semibold text-gray-700">Primary Category</h4>
+                  <p className="text-gray-600 font-medium bg-blue-50 px-3 py-1 rounded-full inline-block">
+                    {analysis.channel_info.primary_category}
+                  </p>
                 </div>
                 
                 <div className="text-center">
@@ -298,7 +315,7 @@ const YouTubeChannelAnalyzer = () => {
             {/* Video Analysis Table */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                🎥 Video Analysis ({analysis.videos.length} videos)
+                🎥 Video Analysis ({analysis.videos.length} videos) - Timezone: {timezone}
               </h2>
               
               <div className="overflow-x-auto">
@@ -306,6 +323,7 @@ const YouTubeChannelAnalyzer = () => {
                   <thead>
                     <tr className="bg-gray-50">
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Video</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Category</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Upload Date</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Duration</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Views</th>
@@ -336,9 +354,17 @@ const YouTubeChannelAnalyzer = () => {
                             </div>
                           </div>
                         </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">
+                            {video.category}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          <div title={video.upload_date}>
-                            {video.upload_date_local}
+                          <div title={`UTC: ${video.upload_date_utc}`}>
+                            <div className="font-medium">{video.upload_date_local}</div>
+                            <div className="text-xs text-gray-500">
+                              Hover for UTC
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">{video.duration}</td>
